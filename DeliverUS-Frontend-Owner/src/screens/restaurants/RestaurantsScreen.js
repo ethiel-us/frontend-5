@@ -16,6 +16,7 @@ import { API_BASE_URL } from '@env'
 export default function RestaurantsScreen({ navigation, route }) {
   const [restaurants, setRestaurants] = useState([])
   const { loggedInUser } = useContext(AuthorizationContext)
+  const [restaurantToBeDeleted, setRestaurantToBeDeleted] = useState(null)
 
   useEffect(() => {
     if (loggedInUser) {
@@ -52,7 +53,49 @@ export default function RestaurantsScreen({ navigation, route }) {
           </TextSemiBold>
         </TextSemiBold>
         <View style={styles.actionButtonsContainer}>
-          {/* Include pressable elements for edit and remove this line including brackets */}
+          <Pressable
+            onPress={() =>
+              navigation.navigate('EditRestaurantScreen', { id: item.id })
+            }
+            style={({ pressed }) => [
+              {
+                backgroundColor: pressed
+                  ? GlobalStyles.brandBlueTap
+                  : GlobalStyles.brandBlue
+              },
+              styles.actionButton
+            ]}
+          >
+            <View
+              style={[
+                { flex: 1, flexDirection: 'row', justifyContent: 'center' }
+              ]}
+            >
+              <MaterialCommunityIcons name="pencil" color={'white'} size={20} />
+              <TextRegular textStyle={styles.text}>Edit</TextRegular>
+            </View>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setRestaurantToBeDeleted(item)}
+            style={({ pressed }) => [
+              {
+                backgroundColor: pressed
+                  ? GlobalStyles.brandBlueTap
+                  : GlobalStyles.brandBlue
+              },
+              styles.actionButton
+            ]}
+          >
+            <View
+              style={[
+                { flex: 1, flexDirection: 'row', justifyContent: 'center' }
+              ]}
+            >
+              <MaterialCommunityIcons name="pencil" color={'white'} size={20} />
+              <TextRegular textStyle={styles.text}>Delete</TextRegular>
+            </View>
+          </Pressable>
         </View>
       </ImageCard>
     )
@@ -114,6 +157,28 @@ export default function RestaurantsScreen({ navigation, route }) {
     }
   }
 
+  const removeRestaurant = async restaurant => {
+    try {
+      await remove(restaurant.id)
+      await fetchRestaurants()
+      setRestaurantToBeDeleted(null)
+      showMessage({
+        message: `Restaurant ${restaurant.name} successfully removed`,
+        type: 'success',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    } catch (error) {
+      console.log(error)
+      setRestaurantToBeDeleted(null)
+      showMessage({
+        message: `Restaurant ${restaurant.name} could not be removed.`,
+        type: 'error',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    }
+  }
 
   return (
     <>
@@ -125,7 +190,18 @@ export default function RestaurantsScreen({ navigation, route }) {
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmptyRestaurantsList}
       />
-
+      <DeleteModal
+        isVisible={restaurantToBeDeleted !== null}
+        onCancel={() => setRestaurantToBeDeleted(null)}
+        onConfirm={() => removeRestaurant(restaurantToBeDeleted)}
+      >
+        <TextRegular>
+          The products of this restaurant will be deleted as well
+        </TextRegular>
+        <TextRegular>
+          If the restaurant has orders, it cant be deleted
+        </TextRegular>
+      </DeleteModal>
     </>
   )
 }
